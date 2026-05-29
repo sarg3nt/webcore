@@ -5,6 +5,7 @@ go 1.25.0
 require (
 	github.com/golang-migrate/migrate/v4 v4.19.1
 	github.com/google/uuid v1.6.0
+	github.com/gorilla/sessions v1.4.0
 	github.com/wagslane/go-password-validator v0.3.0
 	golang.org/x/crypto v0.52.0
 	golang.org/x/time v0.15.0
@@ -13,6 +14,7 @@ require (
 
 require (
 	github.com/dustin/go-humanize v1.0.1 // indirect
+	github.com/gorilla/securecookie v1.1.2 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/ncruces/go-strftime v1.0.0 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
