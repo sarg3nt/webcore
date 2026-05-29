@@ -50,6 +50,17 @@ type ManagerConfig struct {
 	Audit AuditLogger
 	// Logger defaults to slog.Default() when nil.
 	Logger *slog.Logger
+	// LoginPath is where RequireAuth redirects unauthenticated requests
+	// (default "/login").
+	LoginPath string
+	// DevBypassEnvVar is the environment variable that, set to "1", enables
+	// the dev-only loopback auto-login bypass in `-tags dev` builds (default
+	// "WEBCORE_DEV_AUTO_LOGIN"). The bypass also requires the build tag, so it
+	// is impossible to enable in a production binary.
+	DevBypassEnvVar string
+	// DevBypassEmail is the seeded account the loopback bypass logs in as
+	// (default "dev"). The app is responsible for creating that account.
+	DevBypassEmail string
 }
 
 // Manager handles authentication and DB-backed session management. The session
@@ -64,6 +75,9 @@ type Manager struct {
 	absoluteTimeout time.Duration
 	audit           AuditLogger
 	logger          *slog.Logger
+	loginPath       string
+	devBypassEnvVar string
+	devBypassEmail  string
 }
 
 // NewManager builds a Manager from cfg.
@@ -88,6 +102,18 @@ func NewManager(cfg ManagerConfig) (*Manager, error) {
 	if logger == nil {
 		logger = slog.Default()
 	}
+	loginPath := cfg.LoginPath
+	if loginPath == "" {
+		loginPath = "/login"
+	}
+	devEnv := cfg.DevBypassEnvVar
+	if devEnv == "" {
+		devEnv = "WEBCORE_DEV_AUTO_LOGIN"
+	}
+	devEmail := cfg.DevBypassEmail
+	if devEmail == "" {
+		devEmail = "dev"
+	}
 
 	store := sessions.NewCookieStore([]byte(cfg.SessionSecret))
 	store.Options = &sessions.Options{
@@ -106,6 +132,9 @@ func NewManager(cfg ManagerConfig) (*Manager, error) {
 		absoluteTimeout: cfg.AbsoluteTimeout,
 		audit:           cfg.Audit,
 		logger:          logger,
+		loginPath:       loginPath,
+		devBypassEnvVar: devEnv,
+		devBypassEmail:  devEmail,
 	}, nil
 }
 
