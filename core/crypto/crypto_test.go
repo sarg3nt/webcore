@@ -99,7 +99,7 @@ func TestShortCiphertextRejected(t *testing.T) {
 }
 
 // TestFromHashedKeyCompat documents the legacy SHA-256 derivation so a
-// migrating app can confirm web-core decrypts data keyed the old way.
+// migrating app can confirm webcore decrypts data keyed the old way.
 func TestFromHashedKeyCompat(t *testing.T) {
 	e, err := NewFromHashedKey(testSecret)
 	if err != nil {

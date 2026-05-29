@@ -1,7 +1,7 @@
 // Package webauthn is a thin relying-party wrapper over go-webauthn, plus a
 // ready-made User adapter so apps don't reimplement the webauthn.User
 // interface. Apps keep their own credential persistence (loading/saving rows);
-// web-core only owns the RP config and the User shape passed into the library's
+// webcore only owns the RP config and the User shape passed into the library's
 // Begin/Finish ceremonies.
 package webauthn
 

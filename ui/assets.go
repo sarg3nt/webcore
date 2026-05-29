@@ -1,4 +1,4 @@
-// Package ui exposes web-core's embedded static frontend assets (JS and CSS).
+// Package ui exposes webcore's embedded static frontend assets (JS and CSS).
 // Consumers mount StaticFiles under their /static route:
 //
 //	staticFS, _ := fs.Sub(ui.StaticFiles, "static")

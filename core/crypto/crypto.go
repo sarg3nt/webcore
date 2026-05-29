@@ -14,7 +14,7 @@
 // NewFromHashedKey is a compatibility constructor for data originally
 // encrypted with a key derived as a bare SHA-256 of the secret (no HKDF, no
 // label). New code should prefer New; NewFromHashedKey exists so an app
-// migrating onto web-core can keep reading its existing at-rest data without a
+// migrating onto webcore can keep reading its existing at-rest data without a
 // re-encryption pass.
 package crypto
 

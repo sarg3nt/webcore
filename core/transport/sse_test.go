@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sarg3nt/web-core/core/events"
+	"github.com/sarg3nt/webcore/core/events"
 )
 
 func newHub(t *testing.T) *events.Hub {

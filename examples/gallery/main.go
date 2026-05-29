@@ -1,4 +1,4 @@
-// Command gallery renders a page of web-core UI components for visual
+// Command gallery renders a page of webcore UI components for visual
 // inspection during development. Not part of the library; `go run` it and open
 // the printed URL.
 package main
@@ -11,8 +11,8 @@ import (
 	"net/http"
 
 	"github.com/a-h/templ"
-	"github.com/sarg3nt/web-core/ui"
-	c "github.com/sarg3nt/web-core/ui/components"
+	"github.com/sarg3nt/webcore/ui"
+	c "github.com/sarg3nt/webcore/ui/components"
 )
 
 func writeStr(w io.Writer, s string) { _, _ = io.WriteString(w, s) }
@@ -41,7 +41,7 @@ func group(comps ...templ.Component) templ.Component {
 
 func page() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) error {
-		writeStr(w, `<!DOCTYPE html><html lang="en" class="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>web-core gallery</title><script src="https://cdn.tailwindcss.com"></script><script>tailwind.config={darkMode:'class'}</script></head><body class="bg-slate-900 text-gray-200 p-8"><h1 class="text-2xl font-bold mb-6">web-core component gallery</h1><div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl">`)
+		writeStr(w, `<!DOCTYPE html><html lang="en" class="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>webcore gallery</title><script src="https://cdn.tailwindcss.com"></script><script>tailwind.config={darkMode:'class'}</script></head><body class="bg-slate-900 text-gray-200 p-8"><h1 class="text-2xl font-bold mb-6">webcore component gallery</h1><div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl">`)
 
 		sections := []struct {
 			title string

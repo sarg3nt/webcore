@@ -3,7 +3,7 @@
 Status: **Planned, not started.**
 Owner: Dave + Claude (Opus 4.7 → upgrading)
 Last updated: 2026-05-28
-Working directories involved: `/Users/dave/src/gearbox`, `/Users/dave/src/libation`, future `/Users/dave/src/web-core`
+Working directories involved: `/Users/dave/src/gearbox`, `/Users/dave/src/libation`, future `/Users/dave/src/webcore`
 
 This document is the single source of truth for extracting shared web framework code out of `gearbox` and `libation` into a new module so all current and future sarg3nt web apps consume the same UI primitives, auth flow, session/CSRF handling, SSE transport, and form/validation helpers. It is written to be self-contained — a fresh Claude session must be able to pick up from here without re-running the audit.
 
@@ -13,7 +13,7 @@ This document is the single source of truth for extracting shared web framework 
 
 | # | Decision | Value |
 |---|----------|-------|
-| 1 | Module path | `github.com/sarg3nt/web-core` |
+| 1 | Module path | `github.com/sarg3nt/webcore` |
 | 2 | Repo layout | Single repo, two top-level Go packages: `ui/` and `core/` |
 | 3 | Cutover order | Gearbox first (source of truth), then libation |
 | 4 | Pre-extraction cleanup | Part of extraction, not separate gearbox PRs |
@@ -53,7 +53,7 @@ User then asked for two more improvements which were deferred to avoid throwaway
 - **Full-width fixed-top header** like gearbox (currently libation's header is inside the main flow, not fixed). Plan to port gearbox's pattern: `<header class="fixed top-0 inset-x-0 z-50">` with `pt-[57px]` on main-content.
 - **Richer toast features** like gearbox's `utils/toast.js` (475 lines vs libation's 133): positions, drag-dismiss, progress bars, action buttons, ARIA, queueing.
 
-These two land **as part of the libation cutover** to `web-core`, not as standalone libation edits.
+These two land **as part of the libation cutover** to `webcore`, not as standalone libation edits.
 
 ### Dev server state caveat
 
@@ -64,8 +64,8 @@ During the libation UI fixes, the user's `make dev` (which runs `air`) was disru
 ## 3. Architecture: target module shape
 
 ```text
-github.com/sarg3nt/web-core/
-├── go.mod              (module github.com/sarg3nt/web-core)
+github.com/sarg3nt/webcore/
+├── go.mod              (module github.com/sarg3nt/webcore)
 ├── README.md
 ├── LICENSE             (MIT, matching gearbox/libation)
 ├── CHANGELOG.md
@@ -285,7 +285,7 @@ Stays in gearbox:
 
 ## 5. Pre-extraction cleanup (in gearbox, done during extraction)
 
-These are inside gearbox right now and must be untangled before the affected file moves to `web-core`. Do them as part of the same PR that extracts the file.
+These are inside gearbox right now and must be untangled before the affected file moves to `webcore`. Do them as part of the same PR that extracts the file.
 
 1. **Dedup `table.templ`** — same code in `framework/ui/` and `framework/templates/components/`. Pick canonical, delete other, update all gearbox templ imports.
 2. **Dedup `live_refresh.templ`** — same situation.
@@ -304,9 +304,9 @@ These are inside gearbox right now and must be untangled before the affected fil
 
 ### Phase 0 — Repo bootstrap
 
-0.1 User: `gh repo create sarg3nt/web-core --public --description "Shared web framework for sarg3nt apps (UI primitives, auth, SSE, middleware)" --license MIT`.
+0.1 User: `gh repo create sarg3nt/webcore --public --description "Shared web framework for sarg3nt apps (UI primitives, auth, SSE, middleware)" --license MIT`.
 
-0.2 Claude: clone to `/Users/dave/src/web-core`, `go mod init github.com/sarg3nt/web-core`, scaffold directory layout per section 3, add `README.md`, `LICENSE`, `CHANGELOG.md`, `.gitignore`, `.markdownlint.json` mirroring gearbox.
+0.2 Claude: clone to `/Users/dave/src/webcore`, `go mod init github.com/sarg3nt/webcore`, scaffold directory layout per section 3, add `README.md`, `LICENSE`, `CHANGELOG.md`, `.gitignore`, `.markdownlint.json` mirroring gearbox.
 
 0.3 Claude: add to user's VS Code workspace at `/Users/dave/src/homelab/homelab.code-workspace` (or whichever workspace file gearbox + libation live in).
 
@@ -316,7 +316,7 @@ These are inside gearbox right now and must be untangled before the affected fil
 
 These have no coupling and can land standalone.
 
-1.1 `core/errors/` — copy from gearbox, no changes. Add unit tests. PR1 to web-core.
+1.1 `core/errors/` — copy from gearbox, no changes. Add unit tests. PR1 to webcore.
 
 1.2 `core/validation/` — copy from gearbox. Add unit tests. PR2.
 
@@ -386,25 +386,25 @@ These have no coupling and can land standalone.
 
 ### Phase 6 — Gearbox cutover
 
-6.1 Add `web-core` as a `require` in `gearbox/go.mod`, optionally with `replace github.com/sarg3nt/web-core => ../web-core` while iterating locally.
+6.1 Add `webcore` as a `require` in `gearbox/go.mod`, optionally with `replace github.com/sarg3nt/webcore => ../webcore` while iterating locally.
 
 6.2 Per-package cutover, one at a time, smallest-blast-radius first: `errors` → `validation` → `crypto` → `migrate` → `responses` → `middleware/ratelimit` → `middleware/security_headers` → `events` → `transport/sse` → `auth` → `webauthn` → UI templ batch → UI JS batch → UI CSS batch.
 
 6.3 Each cutover step: delete the now-duplicated file from gearbox, update all imports, run `go build ./... && go test ./... && make e2e` (or whatever gearbox's full test target is), commit, PR.
 
-6.4 After cutover, **gearbox base.templ** stays in gearbox (still has gearbox-specific box-chip / breadcrumb / gear concepts), but its internal references to ui/* components now resolve via `web-core/ui/templ/`.
+6.4 After cutover, **gearbox base.templ** stays in gearbox (still has gearbox-specific box-chip / breadcrumb / gear concepts), but its internal references to ui/* components now resolve via `webcore/ui/templ/`.
 
 ### Phase 7 — Libation cutover
 
 7.1 Same `go.mod` add + optional `replace`.
 
-7.2 Per-package cutover, same order. Critically: after auth cutover, libation's `auth.SessionManager` becomes a thin satisfier of `web-core/core/auth.UserStore`.
+7.2 Per-package cutover, same order. Critically: after auth cutover, libation's `auth.SessionManager` becomes a thin satisfier of `webcore/core/auth.UserStore`.
 
 7.3 **Apply deferred UI work as part of this phase:**
 
 - Port gearbox's full-width fixed-top header pattern — header becomes `<header class="fixed top-0 inset-x-0 z-50">` plus `pt-[57px]` on `#main-content`.
-- Adopt richer `toast.js` from `web-core/ui/static/js/utils/toast.js` (replaces libation's stub).
-- Adopt richer `command-palette.js` from `web-core`.
+- Adopt richer `toast.js` from `webcore/ui/static/js/utils/toast.js` (replaces libation's stub).
+- Adopt richer `command-palette.js` from `webcore`.
 
 7.4 Run libation's full test + e2e + a11y + visual targets, fix any regressions.
 
@@ -412,11 +412,11 @@ These have no coupling and can land standalone.
 
 8.1 Drop `replace` directives in both gearbox + libation.
 
-8.2 Tag `web-core` v0.1.0.
+8.2 Tag `webcore` v0.1.0.
 
 8.3 Bump both apps to consume the tag.
 
-8.4 Document the upgrade workflow in `web-core/README.md`: bump tag, update apps, run their full tests, ship.
+8.4 Document the upgrade workflow in `webcore/README.md`: bump tag, update apps, run their full tests, ship.
 
 ---
 
@@ -432,9 +432,9 @@ These have no coupling and can land standalone.
 
 5. **Command palette data model.** Gearbox's `command-palette.js` consumes JSON islands for boxes/gears/pages plus `window.gearbox.commands` for per-page actions. Generalising requires defining a stable shape (e.g. `{label, group, action, href, kbd}`) and a registration API (`WebCore.CommandPalette.register(group, items)`). **Action:** spec the API in PR27 design notes before lifting.
 
-6. **Build-time tailwind.** Currently both apps use Tailwind via CDN (`https://cdn.tailwindcss.com`). With shared components, classnames are duplicated across two repos but Tailwind itself runs in each. **Action:** no change — both apps keep their CDN/local Tailwind setup. The shared CSS files in `web-core/ui/static/css/` use `@apply` directives that resolve at runtime when Tailwind's JIT sees them in the served HTML. Verify this works across an `embed.FS` boundary before committing.
+6. **Build-time tailwind.** Currently both apps use Tailwind via CDN (`https://cdn.tailwindcss.com`). With shared components, classnames are duplicated across two repos but Tailwind itself runs in each. **Action:** no change — both apps keep their CDN/local Tailwind setup. The shared CSS files in `webcore/ui/static/css/` use `@apply` directives that resolve at runtime when Tailwind's JIT sees them in the served HTML. Verify this works across an `embed.FS` boundary before committing.
 
-7. **Local development workflow.** During cutover, contributors will want `web-core` edits to be visible in gearbox + libation without publishing. The `replace github.com/sarg3nt/web-core => ../web-core` directive handles this, and `air` already watches Go source. But static asset edits in `web-core` need to be re-embedded into web-core's binary then surfaced to consumers. Since static assets are served from `web-core/ui/static/`, and each app imports them via `web-core/ui.StaticFiles`, the consumer apps need their air to also re-embed when web-core static files change. **Action:** document in `web-core/README.md`. Simplest workflow: when editing `ui/static/*`, run `touch` on the consumer app's go file to force air rebuild + re-embed.
+7. **Local development workflow.** During cutover, contributors will want `webcore` edits to be visible in gearbox + libation without publishing. The `replace github.com/sarg3nt/webcore => ../webcore` directive handles this, and `air` already watches Go source. But static asset edits in `webcore` need to be re-embedded into webcore's binary then surfaced to consumers. Since static assets are served from `webcore/ui/static/`, and each app imports them via `webcore/ui.StaticFiles`, the consumer apps need their air to also re-embed when webcore static files change. **Action:** document in `webcore/README.md`. Simplest workflow: when editing `ui/static/*`, run `touch` on the consumer app's go file to force air rebuild + re-embed.
 
 ---
 
@@ -445,8 +445,8 @@ If you're a fresh Claude session opening this file: read sections 1–4 (decisio
 Before writing any code, run these sanity checks:
 
 ```bash
-# 1. Confirm web-core repo state
-ls /Users/dave/src/web-core 2>/dev/null && echo "Repo exists, check phase progress"
+# 1. Confirm webcore repo state
+ls /Users/dave/src/webcore 2>/dev/null && echo "Repo exists, check phase progress"
 
 # 2. Check libation deferred work hasn't been done yet
 grep -q 'fixed top-0 inset-x-0' /Users/dave/src/libation/internal/framework/templates/layouts/base.templ \
@@ -477,8 +477,8 @@ If any of those flag unexpected state, stop and ask the user what changed since 
 
 ### What to ask the user first when you resume
 
-1. Has the `web-core` GitHub repo been created? If yes, has it been cloned to `/Users/dave/src/web-core`?
-2. Should the libation UI fixes from this session be committed to libation before any web-core work starts, or rolled into the libation cutover (Phase 7)?
+1. Has the `webcore` GitHub repo been created? If yes, has it been cloned to `/Users/dave/src/webcore`?
+2. Should the libation UI fixes from this session be committed to libation before any webcore work starts, or rolled into the libation cutover (Phase 7)?
 3. Any change to the decisions in section 1 since this plan was written?
 4. Continue at Phase 0 or skip to a later phase if any progress was made offline?
 

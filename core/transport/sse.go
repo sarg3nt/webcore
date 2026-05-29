@@ -11,7 +11,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/sarg3nt/web-core/core/events"
+	"github.com/sarg3nt/webcore/core/events"
 )
 
 // SSEHandler streams events from a Hub to a single HTTP client as SSE. Build

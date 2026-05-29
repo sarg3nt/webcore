@@ -1,4 +1,4 @@
-// Package responses provides the generic JSON envelopes shared across web-core
+// Package responses provides the generic JSON envelopes shared across webcore
 // apps, plus a small helper for writing them.
 //
 // App-specific response DTOs belong in the app, not here — this package holds

@@ -128,21 +128,30 @@ func TestSubscriberCountAndUnsubscribe(t *testing.T) {
 	defer hub.Stop()
 	a := hub.Subscribe("a", "")
 	hub.Subscribe("b", "")
-	if got := hub.SubscriberCount(); got != 2 {
-		t.Fatalf("count = %d, want 2", got)
+	// Subscribe returns once run() receives the registration, which is before
+	// the map insert completes under the lock — so poll rather than reading the
+	// count immediately.
+	if !waitForCount(hub, 2, time.Second) {
+		t.Fatalf("count = %d, want 2", hub.SubscriberCount())
 	}
 	hub.Unsubscribe(a)
-	// Unsubscribe closes the channel; drain until closed.
-	deadline := time.Now().Add(time.Second)
+	if !waitForCount(hub, 1, time.Second) {
+		t.Fatalf("count after unsubscribe = %d, want 1", hub.SubscriberCount())
+	}
+}
+
+// waitForCount polls SubscriberCount until it equals want or timeout elapses.
+// Registration/unregistration are processed asynchronously by run(), so the
+// count is eventually-consistent with Subscribe/Unsubscribe returning.
+func waitForCount(hub *Hub, want int, timeout time.Duration) bool {
+	deadline := time.Now().Add(timeout)
 	for time.Now().Before(deadline) {
-		if hub.SubscriberCount() == 1 {
-			break
+		if hub.SubscriberCount() == want {
+			return true
 		}
 		time.Sleep(5 * time.Millisecond)
 	}
-	if got := hub.SubscriberCount(); got != 1 {
-		t.Fatalf("count after unsubscribe = %d, want 1", got)
-	}
+	return hub.SubscriberCount() == want
 }
 
 func TestRecordDropFirstDropLogsImmediately(t *testing.T) {

@@ -1,4 +1,4 @@
-// Package auth provides authentication primitives for web-core apps: password
+// Package auth provides authentication primitives for webcore apps: password
 // hashing and policy, secure token / UUID generation, email validation, a
 // DB-backed session Manager (driven by the UserStore and AuthUser interfaces),
 // request middleware, and the dev-mode loopback auto-login bypass.

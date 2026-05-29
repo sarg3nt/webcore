@@ -1,4 +1,4 @@
-module github.com/sarg3nt/web-core
+module github.com/sarg3nt/webcore
 
 go 1.25.0
 

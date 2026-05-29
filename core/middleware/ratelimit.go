@@ -1,4 +1,4 @@
-// Package middleware provides reusable net/http middleware for web-core apps:
+// Package middleware provides reusable net/http middleware for webcore apps:
 // per-IP rate limiting and security-header / CSP injection.
 package middleware
 

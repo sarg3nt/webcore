@@ -44,7 +44,7 @@ type ManagerConfig struct {
 	AbsoluteTimeout time.Duration
 	// Secure sets the cookie Secure flag. Leave false only for non-TLS dev.
 	Secure bool
-	// SessionName overrides the cookie name (default "web-core-session").
+	// SessionName overrides the cookie name (default "webcore-session").
 	SessionName string
 	// Audit optionally records security events; nil disables audit logging.
 	Audit AuditLogger
@@ -96,7 +96,7 @@ func NewManager(cfg ManagerConfig) (*Manager, error) {
 	}
 	name := cfg.SessionName
 	if name == "" {
-		name = "web-core-session"
+		name = "webcore-session"
 	}
 	logger := cfg.Logger
 	if logger == nil {

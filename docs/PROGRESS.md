@@ -1,7 +1,7 @@
-# web-core extraction — progress & cutover playbook
+# webcore extraction — progress & cutover playbook
 
 Status as of the overnight autonomous run. Companion to
-[web-core-extraction-plan.md](web-core-extraction-plan.md).
+[webcore-extraction-plan.md](webcore-extraction-plan.md).
 
 ## Done (pushed to `main`)
 
@@ -37,7 +37,7 @@ concurrent), and pushed.
   datagrid→`.datagrid`).
 - `examples/gallery`: dev-only visual inspection server (chrome-verified).
 
-## Deferred (not yet in web-core)
+## Deferred (not yet in webcore)
 
 Intentionally left for the cutover, where the exact contract is observable:
 
@@ -51,7 +51,7 @@ Intentionally left for the cutover, where the exact contract is observable:
 
 ## Decisions locked
 
-- License **Elastic 2.0**; module `github.com/sarg3nt/web-core`; single repo;
+- License **Elastic 2.0**; module `github.com/sarg3nt/webcore`; single repo;
   `ui/components` (not `ui/templ`, to avoid the a-h/templ import collision).
 - Auth: **string** user IDs; **DB-backed session token** model; **RBAC stays
   app-side**; audit optional; dev-bypass env var + email configurable.
@@ -66,19 +66,19 @@ Intentionally left for the cutover, where the exact contract is observable:
 
 ### Per-app mechanics
 
-1. Branch the app (`feature/web-core-adopt-<pkg>`).
+1. Branch the app (`feature/webcore-adopt-<pkg>`).
 2. Add to the app `go.mod`:
 
    ```text
-   require github.com/sarg3nt/web-core v0.0.0
-   replace github.com/sarg3nt/web-core => ../web-core
+   require github.com/sarg3nt/webcore v0.0.0
+   replace github.com/sarg3nt/webcore => ../webcore
    ```
 
 3. Cut over **one package at a time**, smallest blast radius first:
    `errors → validation → crypto → migrate → responses → middleware/ratelimit →
    middleware/security_headers → events → transport → auth → webauthn → ui`.
 4. For each: delete the now-duplicated file(s), repoint imports to
-   `github.com/sarg3nt/web-core/...`, `go build ./... && go test ./...`
+   `github.com/sarg3nt/webcore/...`, `go build ./... && go test ./...`
    (+ the app's e2e), commit.
 
 ### Auth cutover specifics
@@ -102,9 +102,9 @@ Intentionally left for the cutover, where the exact contract is observable:
 ### libation deferred UI work (fold into its cutover)
 
 - Full-width fixed-top header (gearbox pattern) — see the earlier session.
-- Adopt web-core's richer `toast.js` and (later) `command-palette.js`.
+- Adopt webcore's richer `toast.js` and (later) `command-palette.js`.
 
-### Pre-extraction cleanup already handled in web-core
+### Pre-extraction cleanup already handled in webcore
 
 table.templ dedup, metrics split (MetricCard out), namespace renames
 (`WebCoreKeymap`, `.datagrid`), CSP env reads removed. When deleting gearbox's
@@ -113,6 +113,6 @@ originals, also delete its now-dead duplicates.
 ## Resume checklist
 
 ```bash
-cd /Users/dave/src/web-core && go build ./... && go test ./...   # all green
-git -C /Users/dave/src/web-core log --oneline | head -20         # ~18 commits
+cd /Users/dave/src/webcore && go build ./... && go test ./...   # all green
+git -C /Users/dave/src/webcore log --oneline | head -20         # ~18 commits
 ```

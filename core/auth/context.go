@@ -4,7 +4,7 @@ import "context"
 
 type contextKey string
 
-const userContextKey contextKey = "web-core.user"
+const userContextKey contextKey = "webcore.user"
 
 // ContextWithUser returns a child context carrying the authenticated user.
 // RequireAuth installs this; handlers read it via GetUserFromContext.

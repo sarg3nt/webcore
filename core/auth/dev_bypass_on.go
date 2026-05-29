@@ -24,7 +24,7 @@ var devBypassBannerOnce sync.Once
 //  3. r.RemoteAddr is a loopback address.
 //  4. The dev account exists in the store and its StatusError() is nil.
 //
-// The app is responsible for seeding the dev account (web-core never creates
+// The app is responsible for seeding the dev account (webcore never creates
 // users). In production builds the sibling stub returns (nil, false).
 func tryDevBypass(m *Manager, r *http.Request) (AuthUser, bool) {
 	if os.Getenv(m.devBypassEnvVar) != "1" {
