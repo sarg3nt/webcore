@@ -66,4 +66,4 @@ Drop the `replace` and pin a tagged version before shipping.
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+Elastic License 2.0 — see [LICENSE](LICENSE).
