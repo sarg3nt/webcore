@@ -14,6 +14,7 @@ require (
 )
 
 require (
+	github.com/a-h/templ v0.3.1020 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/fxamacker/cbor/v2 v2.9.2 // indirect
 	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
