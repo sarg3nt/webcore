@@ -1,0 +1,39 @@
+package components
+
+// MetricCard renders a labelled metric value with an optional unit. Split out
+// of gearbox's metrics.templ — the domain-specific SystemMetrics/ServiceStatus/
+// BackendHealthBadge components that took models.* stay in gearbox.
+templ MetricCard(label string, value string, unit string) {
+	<div class="bg-gray-50 dark:bg-slate-700 rounded-lg p-4">
+		<div class="text-sm text-gray-600 dark:text-gray-400">{ label }</div>
+		<div class="text-2xl font-bold text-gray-800 dark:text-gray-100">
+			{ value }
+			if unit != "" {
+				<span class="text-lg text-gray-500 dark:text-gray-400">{ unit }</span>
+			}
+		</div>
+	</div>
+}
+
+// MetricCardWithSubValue renders a metric with two values (e.g. RX / TX),
+// colored green and blue respectively, sharing an optional unit.
+templ MetricCardWithSubValue(label string, valueRx string, valueTx string, unit string) {
+	<div class="bg-gray-50 dark:bg-slate-700 rounded-lg p-4">
+		<div class="text-sm text-gray-600 dark:text-gray-400">{ label }</div>
+		<div class="flex items-baseline gap-2">
+			<div class="text-2xl font-bold text-green-600 dark:text-green-400">
+				{ valueRx }
+				if unit != "" {
+					<span class="text-lg text-gray-500 dark:text-gray-400">{ unit }</span>
+				}
+			</div>
+			<span class="text-gray-400">/</span>
+			<div class="text-2xl font-bold text-blue-600 dark:text-blue-400">
+				{ valueTx }
+				if unit != "" {
+					<span class="text-lg text-gray-500 dark:text-gray-400">{ unit }</span>
+				}
+			</div>
+		</div>
+	</div>
+}
