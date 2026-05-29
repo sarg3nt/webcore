@@ -1,0 +1,173 @@
+package components
+
+// Authentication form fragments. These render the form bodies only — the
+// consuming app wraps them in its own branded page layout (logo, title, base
+// template). Each takes a data struct carrying the POST action path, an
+// optional CSRF token, an optional error message, and flow-specific fields.
+//
+// The markup is Tailwind-based and theme-aware (light/dark), matching the rest
+// of ui/components.
+
+// LoginFormData configures LoginForm.
+type LoginFormData struct {
+	// Action is the form POST target (e.g. "/login").
+	Action string
+	// CSRFToken, when non-empty, is emitted as a hidden csrf_token field.
+	CSRFToken string
+	// ReturnURL, when non-empty, is preserved as a hidden return field so the
+	// handler can redirect back after a successful login.
+	ReturnURL string
+	// Error, when non-empty, renders an error alert above the form.
+	Error string
+	// EmailLabel/EmailValue let the app relabel the identifier field (e.g.
+	// "Username" vs "Email") and pre-fill it after a failed attempt.
+	EmailLabel string
+	EmailValue string
+	// ShowWebAuthn renders a "Sign in with a passkey" button (id
+	// "webauthn-login-btn") the app wires to its WebAuthn ceremony JS.
+	ShowWebAuthn bool
+}
+
+templ inputLabel(forID, text string) {
+	<label for={ forID } class="block text-sm font-medium text-gray-700 dark:text-gray-300">{ text }</label>
+}
+
+templ LoginForm(d LoginFormData) {
+	<form method="POST" action={ templ.SafeURL(d.Action) } class="space-y-4">
+		if d.Error != "" {
+			@ErrorAlert(d.Error)
+		}
+		if d.CSRFToken != "" {
+			<input type="hidden" name="csrf_token" value={ d.CSRFToken }/>
+		}
+		if d.ReturnURL != "" {
+			<input type="hidden" name="return" value={ d.ReturnURL }/>
+		}
+		<div>
+			@inputLabel("email", labelOr(d.EmailLabel, "Email"))
+			<input type="text" id="email" name="email" value={ d.EmailValue } autocomplete="username" required autofocus class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"/>
+		</div>
+		<div>
+			@inputLabel("password", "Password")
+			<input type="password" id="password" name="password" autocomplete="current-password" required class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"/>
+		</div>
+		<button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+			Sign in
+		</button>
+		if d.ShowWebAuthn {
+			<button type="button" id="webauthn-login-btn" class="w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 shadow-sm hover:bg-gray-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+				Sign in with a passkey
+			</button>
+		}
+	</form>
+}
+
+// ChangePasswordFormData configures ChangePasswordForm.
+type ChangePasswordFormData struct {
+	Action    string
+	CSRFToken string
+	Error     string
+	// RequireCurrent renders the "current password" field (omit for a forced
+	// first-time setup where there is no current password to confirm).
+	RequireCurrent bool
+}
+
+templ ChangePasswordForm(d ChangePasswordFormData) {
+	<form method="POST" action={ templ.SafeURL(d.Action) } class="space-y-4">
+		if d.Error != "" {
+			@ErrorAlert(d.Error)
+		}
+		if d.CSRFToken != "" {
+			<input type="hidden" name="csrf_token" value={ d.CSRFToken }/>
+		}
+		if d.RequireCurrent {
+			<div>
+				@inputLabel("current_password", "Current password")
+				<input type="password" id="current_password" name="current_password" autocomplete="current-password" required class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"/>
+			</div>
+		}
+		<div>
+			@inputLabel("new_password", "New password")
+			<input type="password" id="new_password" name="new_password" autocomplete="new-password" required class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"/>
+		</div>
+		<div>
+			@inputLabel("confirm_password", "Confirm new password")
+			<input type="password" id="confirm_password" name="confirm_password" autocomplete="new-password" required class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"/>
+		</div>
+		<button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+			Update password
+		</button>
+	</form>
+}
+
+// ForgotPasswordFormData configures ForgotPasswordForm.
+type ForgotPasswordFormData struct {
+	Action    string
+	CSRFToken string
+	Error     string
+	// Sent renders a confirmation message instead of the form (shown after
+	// submission; intentionally generic so it never reveals whether the email
+	// matched an account).
+	Sent bool
+}
+
+templ ForgotPasswordForm(d ForgotPasswordFormData) {
+	if d.Sent {
+		@InfoAlert("If an account exists for that email, a password reset link has been sent.")
+	} else {
+		<form method="POST" action={ templ.SafeURL(d.Action) } class="space-y-4">
+			if d.Error != "" {
+				@ErrorAlert(d.Error)
+			}
+			if d.CSRFToken != "" {
+				<input type="hidden" name="csrf_token" value={ d.CSRFToken }/>
+			}
+			<div>
+				@inputLabel("email", "Email")
+				<input type="email" id="email" name="email" autocomplete="username" required autofocus class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"/>
+			</div>
+			<button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+				Send reset link
+			</button>
+		</form>
+	}
+}
+
+// ResetPasswordFormData configures ResetPasswordForm.
+type ResetPasswordFormData struct {
+	Action    string
+	CSRFToken string
+	Error     string
+	// Token is the reset token carried as a hidden field.
+	Token string
+}
+
+templ ResetPasswordForm(d ResetPasswordFormData) {
+	<form method="POST" action={ templ.SafeURL(d.Action) } class="space-y-4">
+		if d.Error != "" {
+			@ErrorAlert(d.Error)
+		}
+		if d.CSRFToken != "" {
+			<input type="hidden" name="csrf_token" value={ d.CSRFToken }/>
+		}
+		<input type="hidden" name="token" value={ d.Token }/>
+		<div>
+			@inputLabel("new_password", "New password")
+			<input type="password" id="new_password" name="new_password" autocomplete="new-password" required autofocus class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"/>
+		</div>
+		<div>
+			@inputLabel("confirm_password", "Confirm new password")
+			<input type="password" id="confirm_password" name="confirm_password" autocomplete="new-password" required class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"/>
+		</div>
+		<button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+			Set new password
+		</button>
+	</form>
+}
+
+func labelOr(v, fallback string) string {
+	if v == "" {
+		return fallback
+	}
+	return v
+}
