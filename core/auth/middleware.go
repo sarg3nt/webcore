@@ -3,6 +3,7 @@ package auth
 import (
 	"net/http"
 	"net/url"
+	"path"
 	"strings"
 )
 
@@ -67,7 +68,13 @@ func (m *Manager) RequirePasswordChange(setupPath string, allowExact ...string) 
 				http.Redirect(w, r, m.loginPath, http.StatusSeeOther)
 				return
 			}
-			if allowed[r.URL.Path] || strings.HasPrefix(r.URL.Path, "/static/") {
+			// Match on the cleaned path: net/http does NOT normalize `..`
+			// before middleware runs, so without Clean a request for
+			// /static/../account would satisfy the /static/ prefix here while
+			// a normalizing router routes it to /account — an allowlist
+			// bypass of the must-change gate.
+			p := path.Clean(r.URL.Path)
+			if allowed[p] || strings.HasPrefix(p, "/static/") {
 				next.ServeHTTP(w, r)
 				return
 			}

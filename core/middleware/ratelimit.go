@@ -11,13 +11,23 @@ import (
 	"golang.org/x/time/rate"
 )
 
+// maxRateLimitBuckets caps the per-IP bucket map between prune ticks so a
+// client cycling source addresses (trivial from an IPv6 /64) cannot grow it
+// without bound within a single ttl window. When the cap is hit, an arbitrary
+// existing bucket is evicted to make room — a slight fairness cost under
+// active attack, bounded memory always. Variable (not const) so tests can
+// lower it.
+var maxRateLimitBuckets = 65536
+
 // RateLimiter returns a middleware that token-bucket throttles each source IP
 // at rps requests per second with a burst of burst. Source IP is taken from
 // r.RemoteAddr directly (TCP-level), avoiding header-spoof risks. Stale
-// per-IP buckets are pruned every ttl.
+// per-IP buckets are pruned every ttl, and the map is hard-capped at
+// maxRateLimitBuckets between prunes.
 //
 // A single background goroutine prunes stale buckets for the lifetime of the
-// process; create one RateLimiter at startup rather than per-request.
+// process; create one RateLimiter at startup rather than per-request (each
+// construction starts a goroutine that is never stopped).
 func RateLimiter(rps float64, burst int, ttl time.Duration) func(http.Handler) http.Handler {
 	type slot struct {
 		lim  *rate.Limiter
@@ -50,6 +60,15 @@ func RateLimiter(rps float64, burst int, ttl time.Duration) func(http.Handler) h
 			mu.Lock()
 			s, ok := buckets[ip]
 			if !ok {
+				if len(buckets) >= maxRateLimitBuckets {
+					// Evict an arbitrary entry (map iteration order is
+					// randomized) to keep memory bounded under source-IP
+					// cycling.
+					for k := range buckets {
+						delete(buckets, k)
+						break
+					}
+				}
 				s = &slot{lim: rate.NewLimiter(rate.Limit(rps), burst)}
 				buckets[ip] = s
 			}

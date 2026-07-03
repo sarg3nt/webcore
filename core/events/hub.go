@@ -73,6 +73,7 @@ type Hub struct {
 	register    chan *Subscriber
 	unregister  chan *Subscriber
 	done        chan struct{}
+	stopOnce    sync.Once
 	// subscriberDrops is owned by run() and must not be touched elsewhere.
 	subscriberDrops map[dropKey]*dropAggregator
 }
@@ -114,7 +115,8 @@ func NewHub(logger *slog.Logger, opts ...Option) *Hub {
 func (h *Hub) Start() { go h.run() }
 
 // Stop gracefully shuts down the hub and closes all subscriber channels.
-func (h *Hub) Stop() { close(h.done) }
+// Safe to call more than once (e.g. from both a signal handler and a defer).
+func (h *Hub) Stop() { h.stopOnce.Do(func() { close(h.done) }) }
 
 func (h *Hub) run() {
 	for {
@@ -163,14 +165,21 @@ func (h *Hub) run() {
 }
 
 // Subscribe registers a subscriber with the given id and optional topic filter.
-// Blocks until the hub's run loop accepts the registration.
+// Blocks until the hub's run loop accepts the registration. If the hub has
+// been stopped, the returned subscriber's Events channel is already closed —
+// consumers that range/receive on it observe !ok immediately and exit, rather
+// than the caller hanging on a registration nothing will ever drain.
 func (h *Hub) Subscribe(id, topic string) *Subscriber {
 	sub := &Subscriber{
 		ID:     id,
 		Topic:  topic,
 		Events: make(chan Event, h.bufferSize),
 	}
-	h.register <- sub
+	select {
+	case h.register <- sub:
+	case <-h.done:
+		close(sub.Events)
+	}
 	return sub
 }
 

@@ -2,6 +2,7 @@ package auth
 
 import (
 	"net/http"
+	"reflect"
 	"time"
 )
 
@@ -24,6 +25,12 @@ type AuthUser interface {
 	// but may not log in (pending approval, disabled, …); nil means the
 	// account is permitted to authenticate. Apps with only active users return
 	// nil.
+	//
+	// Enumeration note: Login surfaces this message verbatim and BEFORE the
+	// password check, so a non-generic message ("pending approval") tells an
+	// unauthenticated caller the account exists and why it can't log in. That
+	// is usually the desired UX; if enumeration resistance matters more, keep
+	// the message generic.
 	StatusError() error
 	// MustChangePassword reports whether the user must set a new password
 	// before proceeding. Apps without this gate return false.
@@ -86,3 +93,27 @@ const (
 	ActionPasswordChange = "password_change"
 	ActionPasswordReset  = "password_reset"
 )
+
+// normalizeUser guards the Manager against the typed-nil interface trap: a
+// UserStore implemented as `var u *AppUser; return u, nil` returns a NON-nil
+// AuthUser interface wrapping a nil pointer, which would sail past every
+// `user == nil` not-found check and later panic — or, with a buggy
+// ValidateSessionToken, mis-authenticate — on first use. Every store lookup
+// is routed through here so a typed-nil collapses to the untyped nil the
+// UserStore contract requires.
+func normalizeUser(u AuthUser, err error) (AuthUser, error) {
+	if err != nil {
+		return nil, err
+	}
+	if u == nil {
+		return nil, nil
+	}
+	v := reflect.ValueOf(u)
+	switch v.Kind() {
+	case reflect.Ptr, reflect.Map, reflect.Slice, reflect.Chan, reflect.Func, reflect.Interface:
+		if v.IsNil() {
+			return nil, nil
+		}
+	}
+	return u, nil
+}

@@ -25,6 +25,12 @@ const (
 // Common errors returned by the Manager. Login deliberately returns the same
 // ErrInvalidCredentials for unknown-user, wrong-password, and locked-account
 // so the response can't be used to enumerate accounts.
+//
+// Known exception: a non-nil AuthUser.StatusError (e.g. "account is pending
+// approval") is surfaced verbatim, before the password check — it necessarily
+// reveals that the account exists and its status. Apps that care about
+// enumeration across those states should return generic StatusError messages;
+// see the AuthUser.StatusError contract.
 var (
 	ErrInvalidCredentials = errors.New("invalid credentials")
 	ErrNotAuthenticated   = errors.New("not authenticated")
@@ -145,7 +151,7 @@ func (m *Manager) SetSecure(secure bool) { m.sessionStore.Options.Secure = secur
 // On any failure to authenticate it returns ErrInvalidCredentials with no
 // distinction between unknown user, wrong password, and locked account.
 func (m *Manager) Login(w http.ResponseWriter, r *http.Request, email, password string) (AuthUser, error) {
-	user, err := m.store.GetUserByEmail(email)
+	user, err := normalizeUser(m.store.GetUserByEmail(email))
 	if err != nil {
 		return nil, fmt.Errorf("store error: %w", err)
 	}
@@ -289,7 +295,7 @@ func (m *Manager) GetUser(r *http.Request) (AuthUser, error) {
 		}
 	}
 
-	user, err := m.store.GetUserByID(userID)
+	user, err := normalizeUser(m.store.GetUserByID(userID))
 	if err != nil {
 		return nil, fmt.Errorf("get user: %w", err)
 	}
@@ -410,7 +416,7 @@ func (m *Manager) GetSessionExpirationTime(r *http.Request) (time.Time, error) {
 // ChangePassword verifies the current password and sets a new one, invalidating
 // the user's session afterward.
 func (m *Manager) ChangePassword(r *http.Request, userID, currentPassword, newPassword string) error {
-	user, err := m.store.GetUserByID(userID)
+	user, err := normalizeUser(m.store.GetUserByID(userID))
 	if err != nil {
 		return fmt.Errorf("get user: %w", err)
 	}
@@ -461,7 +467,7 @@ func (m *Manager) SetPassword(r *http.Request, userID, newPassword string) error
 // avoid revealing whether an account exists, it returns ("", nil, nil) when no
 // user matches — callers should behave identically either way.
 func (m *Manager) RequestPasswordReset(email string) (token string, user AuthUser, err error) {
-	user, err = m.store.GetUserByEmail(email)
+	user, err = normalizeUser(m.store.GetUserByEmail(email))
 	if err != nil {
 		return "", nil, err
 	}
@@ -480,7 +486,7 @@ func (m *Manager) RequestPasswordReset(email string) (token string, user AuthUse
 
 // ResetPassword completes a reset using a token issued by RequestPasswordReset.
 func (m *Manager) ResetPassword(r *http.Request, token, newPassword string) error {
-	user, err := m.store.GetUserByResetToken(token)
+	user, err := normalizeUser(m.store.GetUserByResetToken(token))
 	if err != nil {
 		return fmt.Errorf("store error: %w", err)
 	}

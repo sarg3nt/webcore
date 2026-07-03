@@ -89,10 +89,12 @@ var defaultCDNDirectives = []string{
 }
 
 // validCSPDirective matches a single CSP directive line: a directive name
-// followed by one or more source expressions, with no semicolons (which would
+// followed by zero or more source expressions, with no semicolons (which would
 // close the directive and let an injected value splice in new directives).
 // `+` and `=` are allowed so base64 nonce-/sha256- expressions aren't dropped.
-var validCSPDirective = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9-]+(\s+[a-zA-Z0-9'_:/.\-*+=]+)+$`)
+// The source group is optional because valid CSP includes sourceless
+// directives like `upgrade-insecure-requests` and `block-all-mixed-content`.
+var validCSPDirective = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9-]+(\s+[a-zA-Z0-9'_:/.\-*+=]+)*$`)
 
 // cspContainsForbidden reports whether s contains any byte with no business in
 // a CSP header value: ASCII control chars (< 0x20, 0x7F) or any non-ASCII rune.

@@ -33,7 +33,7 @@ func tryDevBypass(m *Manager, r *http.Request) (AuthUser, bool) {
 	if !requestIsLoopback(r) {
 		return nil, false
 	}
-	user, err := m.store.GetUserByEmail(m.devBypassEmail)
+	user, err := normalizeUser(m.store.GetUserByEmail(m.devBypassEmail))
 	if err != nil || user == nil {
 		m.logger.Warn("dev auto-login: dev user missing; bypass inactive",
 			"user", m.devBypassEmail, "error", err)
