@@ -64,6 +64,31 @@ replace github.com/sarg3nt/webcore => ../webcore
 
 Drop the `replace` and pin a tagged version before shipping.
 
+> [!IMPORTANT]
+> Never merge a consumer branch that still carries the `replace` directive — consumer CI checks out a single repo and Docker build contexts can't see sibling directories, so the branch only builds on the machine that has both checkouts.
+
+## Releasing and shipping to consumers
+
+1. Land the change on `main` with CI green (build both tag variants, race tests, templ drift check).
+
+2. Tag and push:
+
+   ```bash
+   git tag -a vX.Y.Z -m "webcore vX.Y.Z" && git push origin vX.Y.Z
+   ```
+
+   Pre-1.0, minor bumps may break APIs; consumers pin exact versions so nothing moves until they opt in.
+
+3. In each consumer (gearbox, libation):
+
+   ```bash
+   GOPRIVATE=github.com/sarg3nt/webcore go get github.com/sarg3nt/webcore@vX.Y.Z && go mod tidy
+   ```
+
+   `GOPRIVATE` skips the module proxy for the fetch so a just-pushed tag resolves immediately; consumer CI still verifies `go.sum` against the public checksum database.
+
+4. Run the consumer's full suite (and e2e where it exists) against the new pin before merging.
+
 ## License
 
 Elastic License 2.0 — see [LICENSE](LICENSE).
