@@ -24,14 +24,13 @@ jobs:
           go-version-file: go.mod
           cache: true
 
-      - name: Install templ
-        run: go install github.com/a-h/templ/cmd/templ@v0.3.1020
-
       - name: Verify generated templ code is in sync
         # *_templ.go is committed so consumers build without the templ CLI.
-        # Regenerate and fail if a .templ was edited without regenerating.
+        # Regenerate (with the go.mod-pinned templ version — a mismatched
+        # global CLI silently rewrites every generated file) and fail if out
+        # of sync.
         run: |
-          templ generate
+          go tool templ generate
           git diff --exit-code -- '*_templ.go' || {
             echo '::error::Generated *_templ.go out of sync — run `make generate` and commit.'
             exit 1

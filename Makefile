@@ -4,7 +4,7 @@ help:
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  %-16s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 generate: ## Generate Go from .templ files
-	@templ generate
+	@go tool templ generate
 
 build: generate ## Build all packages
 	@go build ./...
